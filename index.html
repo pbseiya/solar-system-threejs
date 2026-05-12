@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌌 Solar System 3D — Interactive Explorer</title>
+  <style>
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      overflow: hidden;
+      background: #000;
+      font-family: 'Segoe UI', 'Inter', -apple-system, sans-serif;
+      color: #fff;
+    }
+    canvas { display: block; }
+
+    /* ===== Loading Screen ===== */
+    #loader {
+      position: fixed; inset: 0; z-index: 1000;
+      background: radial-gradient(ellipse at center, #0a0e1a 0%, #000 100%);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
+    #loader.hidden { opacity: 0; visibility: hidden; }
+    #loader .ring {
+      width: 80px; height: 80px;
+      border: 3px solid rgba(255, 200, 50, 0.15);
+      border-top-color: #ffc832;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loader p { margin-top: 24px; font-size: 14px; letter-spacing: 2px; color: rgba(255,255,255,0.6); text-transform: uppercase; }
+
+    /* ===== Top Bar ===== */
+    #top-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 16px 24px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+      pointer-events: none;
+    }
+    #top-bar h1 {
+      font-size: 20px; font-weight: 600; letter-spacing: 1px;
+      background: linear-gradient(90deg, #ffc832, #ff6b35, #ff4081);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    #top-bar .subtitle { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; letter-spacing: 0.5px; }
+
+    /* ===== Info Panel ===== */
+    #info-panel {
+      position: fixed; right: 24px; top: 50%; transform: translateY(-50%); z-index: 100;
+      width: 280px; padding: 24px;
+      background: rgba(10, 14, 30, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      opacity: 0; visibility: hidden; transform: translateY(-50%) translateX(20px);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #info-panel.visible {
+      opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0);
+    }
+    #info-panel .close-btn {
+      position: absolute; top: 12px; right: 12px;
+      width: 28px; height: 28px; border: none; background: rgba(255,255,255,0.08);
+      border-radius: 50%; color: #fff; font-size: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    #info-panel .close-btn:hover { background: rgba(255,255,255,0.15); }
+    #info-panel .planet-color {
+      width: 40px; height: 40px; border-radius: 50%; margin-bottom: 16px;
+      box-shadow: 0 0 20px var(--glow);
+    }
+    #info-panel h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    #info-panel .type { font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 16px; }
+    #info-panel .stats { display: grid; gap: 10px; }
+    #info-panel .stat {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 8px;
+    }
+    #info-panel .stat .label { font-size: 11px; color: rgba(255,255,255,0.5); }
+    #info-panel .stat .value { font-size: 13px; font-weight: 600; }
+
+    /* ===== Planet Labels ===== */
+    .planet-label {
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      pointer-events: none;
+      text-shadow: 0 0 8px rgba(0,0,0,0.9);
+      transition: color 0.3s;
+    }
+    .planet-label.hovered { color: #ffc832; }
+
+    /* ===== Controls Hint ===== */
+    #controls-hint {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100;
+      padding: 10px 20px;
+      background: rgba(10, 14, 30, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      font-size: 11px; color: rgba(255,255,255,0.5);
+      letter-spacing: 0.5px;
+      transition: opacity 0.5s;
+    }
+
+    /* ===== Speed Controls ===== */
+    #speed-controls {
+      position: fixed; bottom: 20px; right: 24px; z-index: 100;
+      display: flex; gap: 8px; align-items: center;
+    }
+    #speed-controls button {
+      padding: 8px 16px;
+      background: rgba(10, 14, 30, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      color: rgba(255,255,255,0.7);
+      font-size: 12px; font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #speed-controls button:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    #speed-controls button.active { background: rgba(255, 200, 50, 0.2); color: #ffc832; border-color: rgba(255, 200, 50, 0.3); }
+    #speed-controls .label { font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 768px) {
+      #info-panel { right: 12px; width: calc(100% - 24px); max-width: 320px; }
+      #top-bar h1 { font-size: 16px; }
+      #controls-hint { font-size: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loader">
+    <div class="ring"></div>
+    <p>Initializing Solar System...</p>
+  </div>
+
+  <!-- Top Bar -->
+  <div id="top-bar">
+    <h1>☀️ Solar System Explorer</h1>
+    <div class="subtitle">Interactive 3D • Click a planet to explore</div>
+  </div>
+
+  <!-- Info Panel -->
+  <div id="info-panel">
+    <button class="close-btn" id="close-panel">✕</button>
+    <div class="planet-color" id="planet-color"></div>
+    <h2 id="planet-name">—</h2>
+    <div class="type" id="planet-type">—</div>
+    <div class="stats" id="planet-stats"></div>
+  </div>
+
+  <!-- Controls Hint -->
+  <div id="controls-hint">🖱️ Drag to rotate • Scroll to zoom • Click a planet for details</div>
+
+  <!-- Speed Controls -->
+  <div id="speed-controls">
+    <span class="label">Speed</span>
+    <button data-speed="0">⏸</button>
+    <button data-speed="0.5" class="active">0.5×</button>
+    <button data-speed="1">1×</button>
+    <button data-speed="2">2×</button>
+    <button data-speed="5">5×</button>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
