@@ -89,15 +89,21 @@ controls.rotateSpeed = 0.6;
 controls.target.set(0, 0, 0);
 
 // ===== Lighting =====
-const sunLight = new THREE.PointLight(0xffffff, 2.5, 300, 0.5);
+const sunLight = new THREE.PointLight(0xffeedd, 2.5, 300, 0.5);
 sunLight.position.set(0, 0, 0);
 scene.add(sunLight);
 
-const ambientLight = new THREE.AmbientLight(0x333355, 0.6); // Increased from 0.4
+const ambientLight = new THREE.AmbientLight(0x333355, 0.6);
 scene.add(ambientLight);
 
-// Add hemisphere light for soft fill on dark sides
-const hemiLight = new THREE.HemisphereLight(0x333366, 0x111122, 0.5);
+// Hemisphere light for soft fill on dark sides (sky/ground color)
+const hemiLight = new THREE.HemisphereLight(0x444488, 0x111122, 0.5);
+scene.add(hemiLight);
+
+// Rim Light: subtle light from behind camera to highlight planet edges
+const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+rimLight.position.set(0, 0, 1); // From camera perspective initially
+scene.add(rimLight);
 hemiLight.position.set(0, 50, 0);
 scene.add(hemiLight);
 
@@ -106,6 +112,7 @@ function updateBrightness(val) {
   sunLight.intensity = 2.5 * val;
   ambientLight.intensity = 0.6 * val;
   hemiLight.intensity = 0.5 * val;
+  rimLight.intensity = 0.3 * val;
   renderer.toneMappingExposure = 1.2 * val;
   document.getElementById('brightness-slider').value = val;
 }
@@ -227,36 +234,73 @@ function createRingTexture() {
 
 function createEarthTexture() {
   const canvas = document.createElement('canvas');
-  canvas.width = 512; canvas.height = 256;
+  canvas.width = 1024; canvas.height = 512;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#1a5276';
-  ctx.fillRect(0, 0, 512, 256);
-  // Simple continents
-  ctx.fillStyle = '#27ae60';
-  const continents = [[100,50,80,60],[250,80,60,90],[350,60,70,50],[180,160,100,40]];
-  continents.forEach(([x,y,w,h]) => {
-    ctx.beginPath(); ctx.ellipse(x,y,w/2,h/2,0,0,Math.PI*2); ctx.fill();
+  // Deep ocean
+  ctx.fillStyle = '#002255';
+  ctx.fillRect(0, 0, 1024, 512);
+
+  // Continents (more detail)
+  const continents = [
+    { x: 250, y: 120, w: 80, h: 60, color: '#228833' }, // N. America
+    { x: 300, y: 200, w: 50, h: 80, color: '#117722' }, // S. America
+    { x: 500, y: 100, w: 60, h: 50, color: '#339944' }, // Europe
+    { x: 520, y: 180, w: 120, h: 100, color: '#ccaa33' }, // Africa
+    { x: 700, y: 150, w: 150, h: 100, color: '#558844' }, // Asia
+    { x: 800, y: 300, w: 100, h: 70, color: '#aa6622' }, // Australia
+  ];
+  continents.forEach(c => {
+    ctx.fillStyle = c.color;
+    for(let i=0; i<8; i++) {
+      ctx.beginPath();
+      ctx.ellipse(
+        c.x + (Math.random()-0.5)*c.w, 
+        c.y + (Math.random()-0.5)*c.h, 
+        c.w*0.4, c.h*0.4, 
+        Math.random()*Math.PI, 0, Math.PI*2
+      );
+      ctx.fill();
+    }
   });
-  ctx.fillStyle = '#ffffff'; // ice caps
-  ctx.fillRect(0,0,512,15); ctx.fillRect(0,240,512,16);
-  // clouds
+
+  // Clouds
   ctx.fillStyle = 'rgba(255,255,255,0.3)';
-  for(let i=0;i<20;i++) { ctx.beginPath(); ctx.ellipse(Math.random()*512, Math.random()*256, 20+Math.random()*40, 5+Math.random()*10, 0, 0, Math.PI*2); ctx.fill(); }
+  for(let i=0;i<60;i++) {
+    ctx.beginPath();
+    ctx.ellipse(Math.random()*1024, Math.random()*512, 40+Math.random()*60, 10+Math.random()*15, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+  
+  // Ice caps
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.fillRect(0,0,1024,25); ctx.fillRect(0,485,1024,27);
   return new THREE.CanvasTexture(canvas);
 }
 
 function createMarsTexture() {
   const canvas = document.createElement('canvas');
-  canvas.width = 256; canvas.height = 128;
+  canvas.width = 512; canvas.height = 256;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#c1440e';
-  ctx.fillRect(0,0,256,128);
-  for(let i=0;i<50;i++) {
-    ctx.fillStyle = `rgba(${140+Math.random()*60},${40+Math.random()*30},${10+Math.random()*20},0.4)`;
-    ctx.beginPath(); ctx.arc(Math.random()*256, Math.random()*128, 3+Math.random()*8, 0, Math.PI*2); ctx.fill();
+  // Base red
+  ctx.fillStyle = '#aa3300';
+  ctx.fillRect(0,0,512,256);
+
+  // Surface details (dark spots, craters)
+  for(let i=0;i<100;i++) {
+    ctx.fillStyle = `rgba(${100+Math.random()*60},${20+Math.random()*30},${5+Math.random()*15},0.6)`;
+    ctx.beginPath(); 
+    ctx.arc(Math.random()*512, Math.random()*256, 2+Math.random()*12, 0, Math.PI*2); 
+    ctx.fill();
   }
-  ctx.fillStyle = 'rgba(255,255,255,0.4)';
-  ctx.fillRect(0,0,256,10); ctx.fillRect(0,118,256,10);
+  // Olympus Mons (big white/red spot)
+  ctx.fillStyle = 'rgba(200,80,20,0.5)';
+  ctx.beginPath(); ctx.arc(150, 100, 30, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.3)'; // snow cap
+  ctx.beginPath(); ctx.arc(150, 95, 10, 0, Math.PI*2); ctx.fill();
+
+  // Ice caps
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillRect(0,0,512,15); ctx.fillRect(0,240,512,16);
   return new THREE.CanvasTexture(canvas);
 }
 
@@ -323,8 +367,11 @@ PLANETS.forEach((data, index) => {
     orbitPoints.push(Math.cos(a) * data.distance, 0, Math.sin(a) * data.distance);
   }
   orbitGeo.setAttribute('position', new THREE.Float32BufferAttribute(orbitPoints, 3));
-  const orbitMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.08 });
+  const orbitMat = new THREE.LineDashedMaterial({
+    color: 0x88aaff, transparent: true, opacity: 0.4, dashSize: 0.4, gapSize: 0.2
+  });
   const orbitLine = new THREE.Line(orbitGeo, orbitMat);
+  orbitLine.computeLineDistances();
   scene.add(orbitLine);
 
   // CSS2D Label
@@ -532,6 +579,18 @@ function animate() {
       element.style.transform = 'translate(-50%, -100%)';
     }
   });
+
+  // Camera Follow Selected Planet
+  if (selectedPlanet && !isCameraAnimating) {
+    const worldPos = new THREE.Vector3();
+    selectedPlanet.getWorldPosition(worldPos);
+    controls.target.lerp(worldPos, 0.05);
+    // Keep a distance
+    const offset = camera.position.clone().sub(controls.target);
+    if (offset.length() < 5) {
+       camera.position.copy(controls.target).add(offset.normalize().multiplyScalar(10));
+    }
+  }
 
   controls.update();
   renderer.render(scene, camera);
