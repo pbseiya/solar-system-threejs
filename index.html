@@ -110,31 +110,63 @@
       transition: opacity 0.5s;
     }
 
-    /* ===== Speed Controls ===== */
-    #speed-controls {
-      position: fixed; bottom: 20px; right: 24px; z-index: 100;
-      display: flex; gap: 8px; align-items: center;
+    /* ===== Right Controls Panel ===== */
+    #right-controls {
+      position: fixed; bottom: 60px; right: 24px; z-index: 100;
+      display: flex; flex-direction: column; gap: 16px; align-items: flex-end;
     }
-    #speed-controls button {
-      padding: 8px 16px;
+    .control-group {
+      display: flex; gap: 6px; align-items: center;
       background: rgba(10, 14, 30, 0.7);
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 10px;
-      color: rgba(255,255,255,0.7);
-      font-size: 12px; font-weight: 500;
+      border-radius: 12px;
+      padding: 8px 12px;
+    }
+    .control-group .label {
+      font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px;
+      min-width: 40px;
+    }
+    .control-group button, .control-group input {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      color: #fff;
+      padding: 4px 10px;
+      font-size: 12px;
       cursor: pointer;
       transition: all 0.2s;
     }
-    #speed-controls button:hover { background: rgba(255,255,255,0.1); color: #fff; }
-    #speed-controls button.active { background: rgba(255, 200, 50, 0.2); color: #ffc832; border-color: rgba(255, 200, 50, 0.3); }
-    #speed-controls .label { font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; }
+    .control-group button:hover, .control-group input:hover {
+      background: rgba(255,255,255,0.15);
+    }
+    .control-group button:active {
+      background: rgba(255, 200, 50, 0.3);
+      border-color: #ffc832;
+    }
+    .control-group input[type="range"] {
+      width: 80px; height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255,255,255,0.2);
+      border-radius: 2px;
+      outline: none;
+      padding: 0;
+    }
+    .control-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px; height: 12px;
+      background: #ffc832;
+      border-radius: 50%;
+      cursor: pointer;
+    }
 
     /* ===== Responsive ===== */
     @media (max-width: 768px) {
       #info-panel { right: 12px; width: calc(100% - 24px); max-width: 320px; }
       #top-bar h1 { font-size: 16px; }
       #controls-hint { font-size: 10px; }
+      #right-controls { right: 12px; bottom: 50px; }
     }
   </style>
 </head>
@@ -163,14 +195,33 @@
   <!-- Controls Hint -->
   <div id="controls-hint">🖱️ Drag to rotate • Scroll to zoom • Click a planet for details</div>
 
-  <!-- Speed Controls -->
-  <div id="speed-controls">
-    <span class="label">Speed</span>
-    <button data-speed="0">⏸</button>
-    <button data-speed="0.5" class="active">0.5×</button>
-    <button data-speed="1">1×</button>
-    <button data-speed="2">2×</button>
-    <button data-speed="5">5×</button>
+  <!-- Right Controls Panel -->
+  <div id="right-controls">
+    <!-- Speed Controls -->
+    <div class="control-group">
+      <span class="label">Speed</span>
+      <button data-speed="0">⏸</button>
+      <button data-speed="0.5" class="active">0.5×</button>
+      <button data-speed="1">1×</button>
+      <button data-speed="2">2×</button>
+      <button data-speed="5">5×</button>
+    </div>
+    
+    <!-- Zoom Controls -->
+    <div class="control-group">
+      <span class="label">Zoom</span>
+      <button id="zoom-in">🔍+</button>
+      <button id="zoom-out">🔍-</button>
+      <button id="zoom-reset">↺</button>
+    </div>
+    
+    <!-- Brightness Controls -->
+    <div class="control-group">
+      <span class="label">Light</span>
+      <button id="brightness-down">☀️-</button>
+      <input type="range" id="brightness-slider" min="0.2" max="3" step="0.1" value="1">
+      <button id="brightness-up">☀️+</button>
+    </div>
   </div>
 
   <script type="module" src="/src/main.js"></script>
