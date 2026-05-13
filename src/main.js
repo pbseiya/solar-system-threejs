@@ -93,13 +93,19 @@ const sunLight = new THREE.PointLight(0xffffff, 2.5, 300, 0.5);
 sunLight.position.set(0, 0, 0);
 scene.add(sunLight);
 
-const ambientLight = new THREE.AmbientLight(0x333355, 0.4);
+const ambientLight = new THREE.AmbientLight(0x333355, 0.6); // Increased from 0.4
 scene.add(ambientLight);
+
+// Add hemisphere light for soft fill on dark sides
+const hemiLight = new THREE.HemisphereLight(0x333366, 0x111122, 0.5);
+hemiLight.position.set(0, 50, 0);
+scene.add(hemiLight);
 
 function updateBrightness(val) {
   currentBrightness = val;
   sunLight.intensity = 2.5 * val;
-  ambientLight.intensity = 0.4 * val;
+  ambientLight.intensity = 0.6 * val;
+  hemiLight.intensity = 0.5 * val;
   renderer.toneMappingExposure = 1.2 * val;
   document.getElementById('brightness-slider').value = val;
 }
