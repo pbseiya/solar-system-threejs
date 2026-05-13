@@ -117,19 +117,20 @@
     }
     .control-group {
       display: flex; gap: 6px; align-items: center;
-      background: rgba(10, 14, 30, 0.7);
+      background: rgba(0, 0, 0, 0.85);
       backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
       border-radius: 12px;
       padding: 8px 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     }
     .control-group .label {
-      font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px;
+      font-size: 10px; color: #fff; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;
       min-width: 40px;
     }
     .control-group button, .control-group input {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
       border-radius: 6px;
       color: #fff;
       padding: 4px 10px;
@@ -138,11 +139,14 @@
       transition: all 0.2s;
     }
     .control-group button:hover, .control-group input:hover {
-      background: rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.25);
+      border-color: rgba(255,255,255,0.4);
     }
-    .control-group button:active {
+    .control-group button.active {
       background: rgba(255, 200, 50, 0.3);
       border-color: #ffc832;
+      color: #ffc832;
+      font-weight: bold;
     }
     .control-group input[type="range"] {
       width: 80px; height: 4px;
